@@ -1,0 +1,20 @@
+{
+  "name": "definitely-one-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend API and Ecosystem Gateway for Definitely One",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.ts",
+    "build": "tsc",
+    "start": "node src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["definitely-one", "api", "sso", "ecosystem"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

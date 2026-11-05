@@ -9,6 +9,13 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 export function useTheme() {
   const scheme = useColorScheme();
   const theme = scheme === 'dark' ? 'dark' : 'light';
+  const colorObj = Colors[theme];
 
-  return Colors[theme];
+  return {
+    ...colorObj,
+    colors: colorObj,
+    scheme,
+    theme,
+    isDark: theme === 'dark',
+  };
 }

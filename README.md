@@ -1,43 +1,61 @@
-# Welcome to your Expo app 👋
+# Definitely One — Mobile Companion App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Definitely One** (`definitely-one-ecosystem`) is the official mobile companion app for the Definitely Platform Ecosystem. Built with **Expo SDK 58**, **React Native 0.88**, and **React 19.3**.
 
-## Get started
+---
 
-1. Install dependencies
+## Architecture
 
-   ```bash
-   npm install
-   ```
+The mobile workspace follows a dual-tier standard:
+- `client/`: Mobile client application built with Expo Router (file-based navigation in `src/app/`).
+- `server/`: Dedicated Node.js REST Gateway (`definitely-one-server` on port `8085`) providing service registry caching and mobile-optimized telemetry.
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## Key Features
 
-In the output, you'll find options to open the app in a
+- **SSO & Biometric Security**: Integrates with `accounts.definitely.live` via custom deep-link scheme (`definitelyone://`). Hardware-backed token storage via `expo-secure-store` and instant biometric unlock (Face ID, Touch ID, Android Biometrics) via `expo-local-authentication`.
+- **Ecosystem Service Catalog**: Unified dashboard connecting users to Definitely Hub, Prefly (AI Interviews), and Meet (Live Video).
+- **Design System Consistency**: Native UI aligned with the Definitely tokenized design system (3-tier typography, laser gradient accents).
+- **Offline Resiliency**: TanStack React Query with cache persistence.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Getting Started
 
-## Get a fresh project
+### Prerequisites
+- Node.js ≥ 22.0.0
+- npm or bun
 
-When you're ready, run:
-
+### 1. Install Dependencies
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+### 2. Start the Development Server
+```bash
+npx expo start
+```
+From the interactive terminal prompt, you can:
+- Press `i` to launch on the iOS Simulator
+- Press `a` to launch on the Android Emulator / Device
+- Scan the QR code using Expo Go or a development build
 
-### Other setup steps
+### 3. Typecheck & Health Check
+```bash
+npx tsc --noEmit
+npx expo-doctor
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
+---
+
+## Build & Distribution (EAS)
+
+Builds are managed via Expo Application Services (EAS):
+```bash
+npx eas-cli build --profile development
+npx eas-cli build --profile production
+```
 - If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
 - Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
 
