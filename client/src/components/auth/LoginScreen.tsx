@@ -17,8 +17,10 @@ import { useTheme } from '@/hooks/use-theme';
 export function LoginScreen() {
   const { colors } = useTheme();
   const openSsoLogin = useAuthStore((s) => s.openSsoLogin);
+  const openSsoRegister = useAuthStore((s) => s.openSsoRegister);
   const loginWithTokens = useAuthStore((s) => s.loginWithTokens);
   const [ssoLoading, setSsoLoading] = useState(false);
+  const [registerLoading, setRegisterLoading] = useState(false);
   const [manualToken, setManualToken] = useState('');
   const [showDeveloperInput, setShowDeveloperInput] = useState(false);
   const [devLoading, setDevLoading] = useState(false);
@@ -30,12 +32,25 @@ export function LoginScreen() {
     try {
       const ok = await openSsoLogin();
       if (!ok) {
-        // User cancelled or closed browser without authenticating
         setSsoLoading(false);
       }
     } catch (err: any) {
       setError(err?.message || 'Single Sign-On failed');
       setSsoLoading(false);
+    }
+  };
+
+  const handleSsoRegister = async () => {
+    setError(null);
+    setRegisterLoading(true);
+    try {
+      const ok = await openSsoRegister();
+      if (!ok) {
+        setRegisterLoading(false);
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Registration failed');
+      setRegisterLoading(false);
     }
   };
 
@@ -115,7 +130,7 @@ export function LoginScreen() {
           <TouchableOpacity
             style={[styles.primaryButton, { backgroundColor: colors.primary }]}
             onPress={handleSsoSignIn}
-            disabled={ssoLoading}
+            disabled={ssoLoading || registerLoading}
             activeOpacity={0.85}>
             {ssoLoading ? (
               <ActivityIndicator color="#FFFFFF" size="small" style={{ marginRight: 8 }} />
@@ -124,6 +139,28 @@ export function LoginScreen() {
             )}
             <ThemedText style={styles.primaryButtonText}>
               {ssoLoading ? 'Waiting for sign-in...' : 'Sign in with Definitely SSO'}
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* Secondary Register Action */}
+          <TouchableOpacity
+            style={[
+              styles.secondaryButton,
+              {
+                backgroundColor: colors.backgroundElement,
+                borderColor: colors.cardBorder,
+              },
+            ]}
+            onPress={handleSsoRegister}
+            disabled={ssoLoading || registerLoading}
+            activeOpacity={0.85}>
+            {registerLoading ? (
+              <ActivityIndicator color={colors.text} size="small" style={{ marginRight: 8 }} />
+            ) : (
+              <Ionicons name="person-add-outline" size={18} color={colors.text} style={{ marginRight: 8 }} />
+            )}
+            <ThemedText style={[styles.secondaryButtonText, { color: colors.text }]}>
+              {registerLoading ? 'Opening registration...' : 'Create an Account'}
             </ThemedText>
           </TouchableOpacity>
 
@@ -286,6 +323,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 10,
+  },
+  secondaryButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   ssoHint: {
     fontSize: 11,

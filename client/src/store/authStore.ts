@@ -26,6 +26,7 @@ export interface AuthState {
   refreshAuthSession: () => Promise<boolean>;
   restoreSession: () => Promise<boolean>;
   openSsoLogin: () => Promise<boolean>;
+  openSsoRegister: () => Promise<boolean>;
   startSsoPolling: (code: string) => void;
   stopSsoPolling: () => void;
   lock: () => void;
@@ -93,6 +94,79 @@ async function fetchUserProfile(token: string): Promise<UserProfile | null> {
     console.warn('[authStore] Failed to fetch user profile:', err);
     return null;
   }
+}
+
+/**
+ * Shared SSO Trigger for both Login (/login) and Registration (/signup)
+ */
+async function triggerSsoFlow(mode: 'login' | 'signup'): Promise<boolean> {
+  const store = useAuthStore.getState();
+  const ssoCode = Math.random().toString(36).substring(2) + Date.now().toString(36);
+  store.startSsoPolling(ssoCode);
+
+  const redirectUri = AUTH_CONFIG.REDIRECT_URI;
+  const targetPath = mode === 'signup' ? '/signup' : '/login';
+  const authUrl = `${AUTH_CONFIG.ACCOUNTS_URL}${targetPath}?redirect=${encodeURIComponent(
+    redirectUri
+  )}&platform=mobile&sso_code=${encodeURIComponent(ssoCode)}`;
+
+  try {
+    const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+    if (result.type === 'success' && result.url) {
+      store.stopSsoPolling();
+
+      let token: string | null = null;
+      let refreshToken: string | null = null;
+
+      try {
+        const parsed = new URL(result.url);
+        token = parsed.searchParams.get('token') || parsed.searchParams.get('sso_token');
+        refreshToken =
+          parsed.searchParams.get('refreshToken') || parsed.searchParams.get('refresh_token');
+
+        if (!token && parsed.hash) {
+          const hashParams = new URLSearchParams(parsed.hash.replace(/^#\/?/, ''));
+          token = hashParams.get('token') || hashParams.get('sso_token');
+          if (!refreshToken) {
+            refreshToken =
+              hashParams.get('refreshToken') || hashParams.get('refresh_token');
+          }
+        }
+      } catch {
+        // fallback query string regex parse
+        const matchToken = result.url.match(/[?&#]token=([^&#]+)/);
+        const matchSsoToken = result.url.match(/[?&#]sso_token=([^&#]+)/);
+        const matchRefresh = result.url.match(/[?&#]refreshToken=([^&#]+)/);
+        token = matchToken?.[1]
+          ? decodeURIComponent(matchToken[1])
+          : matchSsoToken?.[1]
+          ? decodeURIComponent(matchSsoToken[1])
+          : null;
+        refreshToken = matchRefresh?.[1] ? decodeURIComponent(matchRefresh[1]) : null;
+      }
+
+      if (token) {
+        return await store.loginWithTokens(token, refreshToken || undefined);
+      }
+    } else {
+      // Keep polling active for an 8s grace period in case the OS dismissed the browser
+      // modal when handing off to the deep link callback or background claim
+      setTimeout(() => {
+        if (!useAuthStore.getState().isAuthenticated) {
+          store.stopSsoPolling();
+        }
+      }, 8000);
+    }
+  } catch (err) {
+    console.warn('[authStore] openAuthSessionAsync error:', err);
+    setTimeout(() => {
+      if (!useAuthStore.getState().isAuthenticated) {
+        store.stopSsoPolling();
+      }
+    }, 8000);
+  }
+
+  return false;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -323,52 +397,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   openSsoLogin: async () => {
-    const ssoCode = Math.random().toString(36).substring(2) + Date.now().toString(36);
-    get().startSsoPolling(ssoCode);
+    return triggerSsoFlow('login');
+  },
 
-    const redirectUri = AUTH_CONFIG.REDIRECT_URI;
-    const authUrl = `${AUTH_CONFIG.ACCOUNTS_URL}/login?redirect=${encodeURIComponent(redirectUri)}&platform=mobile&sso_code=${encodeURIComponent(ssoCode)}`;
-
-    try {
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-      if (result.type === 'success' && result.url) {
-        get().stopSsoPolling();
-
-        let token: string | null = null;
-        let refreshToken: string | null = null;
-
-        try {
-          const parsed = new URL(result.url);
-          token = parsed.searchParams.get('token') || parsed.searchParams.get('sso_token');
-          refreshToken =
-            parsed.searchParams.get('refreshToken') || parsed.searchParams.get('refresh_token');
-
-          if (!token && parsed.hash) {
-            const hashParams = new URLSearchParams(parsed.hash.replace(/^#\/?/, ''));
-            token = hashParams.get('token') || hashParams.get('sso_token');
-            if (!refreshToken) {
-              refreshToken =
-                hashParams.get('refreshToken') || hashParams.get('refresh_token');
-            }
-          }
-        } catch {
-          // fallback query string regex parse
-          const matchToken = result.url.match(/[?&#]token=([^&#]+)/);
-          const matchSsoToken = result.url.match(/[?&#]sso_token=([^&#]+)/);
-          const matchRefresh = result.url.match(/[?&#]refreshToken=([^&#]+)/);
-          token = matchToken?.[1] ? decodeURIComponent(matchToken[1]) : (matchSsoToken?.[1] ? decodeURIComponent(matchSsoToken[1]) : null);
-          refreshToken = matchRefresh?.[1] ? decodeURIComponent(matchRefresh[1]) : null;
-        }
-
-        if (token) {
-          return await get().loginWithTokens(token, refreshToken || undefined);
-        }
-      }
-    } catch (err) {
-      console.warn('[authStore] openAuthSessionAsync error:', err);
-    }
-
-    return false;
+  openSsoRegister: async () => {
+    return triggerSsoFlow('signup');
   },
 
   lock: () => {
