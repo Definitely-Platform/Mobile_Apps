@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
+import { AuthWebViewModal } from '@/components/auth/AuthWebViewModal';
 import { useAuthStore, DEMO_USER } from '@/store/authStore';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -19,6 +20,8 @@ export function LoginScreen() {
   const openSsoLogin = useAuthStore((s) => s.openSsoLogin);
   const openSsoRegister = useAuthStore((s) => s.openSsoRegister);
   const loginWithTokens = useAuthStore((s) => s.loginWithTokens);
+  const [webViewVisible, setWebViewVisible] = useState(false);
+  const [webViewMode, setWebViewMode] = useState<'login' | 'signup'>('login');
   const [ssoLoading, setSsoLoading] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [manualToken, setManualToken] = useState('');
@@ -26,7 +29,19 @@ export function LoginScreen() {
   const [devLoading, setDevLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSsoSignIn = async () => {
+  const handleSsoSignIn = () => {
+    setError(null);
+    setWebViewMode('login');
+    setWebViewVisible(true);
+  };
+
+  const handleSsoRegister = () => {
+    setError(null);
+    setWebViewMode('signup');
+    setWebViewVisible(true);
+  };
+
+  const handleGoogleSignIn = async () => {
     setError(null);
     setSsoLoading(true);
     try {
@@ -35,22 +50,8 @@ export function LoginScreen() {
         setSsoLoading(false);
       }
     } catch (err: any) {
-      setError(err?.message || 'Single Sign-On failed');
+      setError(err?.message || 'Google Sign-On failed');
       setSsoLoading(false);
-    }
-  };
-
-  const handleSsoRegister = async () => {
-    setError(null);
-    setRegisterLoading(true);
-    try {
-      const ok = await openSsoRegister();
-      if (!ok) {
-        setRegisterLoading(false);
-      }
-    } catch (err: any) {
-      setError(err?.message || 'Registration failed');
-      setRegisterLoading(false);
     }
   };
 
@@ -132,13 +133,31 @@ export function LoginScreen() {
             onPress={handleSsoSignIn}
             disabled={ssoLoading || registerLoading}
             activeOpacity={0.85}>
-            {ssoLoading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" style={{ marginRight: 8 }} />
-            ) : (
-              <Ionicons name="shield-checkmark" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
-            )}
+            <Ionicons name="shield-checkmark" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
             <ThemedText style={styles.primaryButtonText}>
-              {ssoLoading ? 'Waiting for sign-in...' : 'Sign in with Definitely SSO'}
+              Sign in with Definitely SSO
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* Direct Google SSO Action */}
+          <TouchableOpacity
+            style={[
+              styles.googleButton,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.cardBorder,
+              },
+            ]}
+            onPress={handleGoogleSignIn}
+            disabled={ssoLoading || registerLoading}
+            activeOpacity={0.85}>
+            {ssoLoading ? (
+              <ActivityIndicator color="#EA4335" size="small" style={{ marginRight: 8 }} />
+            ) : (
+              <Ionicons name="logo-google" size={18} color="#EA4335" style={{ marginRight: 8 }} />
+            )}
+            <ThemedText style={[styles.googleButtonText, { color: colors.text }]}>
+              {ssoLoading ? 'Connecting to Google...' : 'Continue with Google'}
             </ThemedText>
           </TouchableOpacity>
 
@@ -165,7 +184,7 @@ export function LoginScreen() {
           </TouchableOpacity>
 
           <ThemedText type="small" style={[styles.ssoHint, { color: colors.textSecondary }]}>
-            Opens accounts.definitely.live in secure system browser
+            Secure in-app authentication via Definitely Accounts
           </ThemedText>
 
           <View style={styles.dividerRow}>
@@ -233,6 +252,13 @@ export function LoginScreen() {
           Protected by Definitely One SSO & Hardware Keystore
         </ThemedText>
       </ScrollView>
+
+      {/* Embedded In-App Authentication WebView */}
+      <AuthWebViewModal
+        visible={webViewVisible}
+        mode={webViewMode}
+        onClose={() => setWebViewVisible(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -323,6 +349,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 10,
+  },
+  googleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   secondaryButton: {
     flexDirection: 'row',

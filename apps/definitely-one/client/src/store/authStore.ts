@@ -58,6 +58,40 @@ export const DEMO_USER: UserProfile = {
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 /**
+ * Decodes JWT token payload as a fallback when offline or /api/auth/me is unreachable
+ */
+function decodeJwtUser(token: string): UserProfile | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const jsonStr = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const parsed = JSON.parse(jsonStr);
+    const email = parsed.email || (typeof parsed.sub === 'string' && parsed.sub.includes('@') ? parsed.sub : 'user@definitely.live');
+    return {
+      id: parsed.userId || parsed.id || parsed.sub || `usr_${Date.now()}`,
+      email,
+      name: parsed.name || email.split('@')[0],
+      role: parsed.role || 'member',
+      avatarUrl: parsed.avatarUrl || parsed.picture,
+      status: 'active',
+      organization: {
+        id: 'org_main_01',
+        name: 'Definitely One HQ',
+        plan: 'enterprise',
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetch fresh user profile from central auth-service API
  */
 async function fetchUserProfile(token: string): Promise<UserProfile | null> {
@@ -189,7 +223,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       let user = userProfile;
       if (!user) {
-        user = (await fetchUserProfile(accessToken)) || undefined;
+        user = (await fetchUserProfile(accessToken)) || decodeJwtUser(accessToken) || undefined;
       }
 
       if (!user) {
