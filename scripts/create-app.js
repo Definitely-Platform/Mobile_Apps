@@ -103,6 +103,8 @@ async function main() {
     '{{APP_SCHEME}}': scheme,
     '{{APP_PACKAGE}}': pkg,
     '{{APP_BUNDLE_ID}}': pkg,
+    '{{EAS_PROJECT_ID}}': '',
+    '{{FIREBASE_APP_ID}}': '',
     '@definitely/mobile-template-client': `@definitely/${slug}-client`,
     '{{APP_WORKSPACE_NAME}}': `@definitely/${slug}-client`,
   };

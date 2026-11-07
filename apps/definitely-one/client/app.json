@@ -87,6 +87,10 @@
       },
       "eas": {
         "projectId": "cf35175b-c5ea-4e7d-a9b9-a0f8715c16f2"
+      },
+      "firebase": {
+        "appId": "1:919056358557:android:7534014df2fdb48179c874",
+        "groups": "qa-testers"
       }
     },
     "owner": "sabrealam"

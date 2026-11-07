@@ -1,0 +1,167 @@
+name: Build & Distribute Mobile App
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_slug:
+        description: 'App Directory Name (under apps/)'
+        required: true
+        default: 'definitely-one'
+      build_profile:
+        description: 'EAS Build Profile (preview = APK / production = AAB)'
+        required: true
+        type: choice
+        options:
+          - preview
+          - production
+        default: 'preview'
+      release_notes:
+        description: 'Release Notes'
+        required: false
+        default: 'Manual release build'
+      tester_groups:
+        description: 'Firebase Tester Groups (Preview only)'
+        required: false
+        default: 'qa-testers'
+  push:
+    tags:
+      - '*@v*'
+      - '*@*'
+
+jobs:
+  build-and-distribute:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve App Target & Release Metadata
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            APP_SLUG="${{ github.event.inputs.app_slug }}"
+            BUILD_PROFILE="${{ github.event.inputs.build_profile }}"
+            RELEASE_NOTES="${{ github.event.inputs.release_notes }}"
+            TESTER_GROUPS="${{ github.event.inputs.tester_groups }}"
+            VERSION="manual-$(date +%Y%m%d-%H%M)"
+          else
+            RAW_TAG="${{ github.ref_name }}"
+            APP_SLUG=$(echo "$RAW_TAG" | cut -d'@' -f1)
+            VERSION=$(echo "$RAW_TAG" | cut -d'@' -f2)
+            
+            # Check if production tag (e.g. app@v1.0.0-prod)
+            if [[ "$VERSION" == *"-prod"* ]]; then
+              BUILD_PROFILE="production"
+            else
+              BUILD_PROFILE="preview"
+            fi
+            
+            TESTER_GROUPS="qa-testers"
+            
+            # Generate release notes from git commits
+            RELEASE_NOTES=$(git log -1 --pretty=%B)
+          fi
+
+          echo "APP_SLUG=$APP_SLUG" >> $GITHUB_OUTPUT
+          echo "BUILD_PROFILE=$BUILD_PROFILE" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "TESTER_GROUPS=$TESTER_GROUPS" >> $GITHUB_OUTPUT
+          echo "RELEASE_NOTES=$RELEASE_NOTES" >> $GITHUB_OUTPUT
+
+          CLIENT_DIR="apps/${APP_SLUG}/client"
+          if [ ! -d "$CLIENT_DIR" ]; then
+            echo "❌ Error: Target client directory '$CLIENT_DIR' does not exist."
+            exit 1
+          fi
+
+          # Extract App Display Name
+          APP_NAME=$(jq -r '.expo.name // "'"$APP_SLUG"'"' "$CLIENT_DIR/app.json" 2>/dev/null || echo "$APP_SLUG")
+          echo "APP_NAME=$APP_NAME" >> $GITHUB_OUTPUT
+
+          # Auto-discover Firebase App ID
+          FIREBASE_APP_ID=""
+          if [ -f "$CLIENT_DIR/google-services.json" ]; then
+            FIREBASE_APP_ID=$(jq -r '.client[0].client_info.mobilesdk_app_id // empty' "$CLIENT_DIR/google-services.json" 2>/dev/null || true)
+          fi
+          if [ -z "$FIREBASE_APP_ID" ] && [ -f "$CLIENT_DIR/app.json" ]; then
+            FIREBASE_APP_ID=$(jq -r '.expo.extra.firebase.appId // empty' "$CLIENT_DIR/app.json" 2>/dev/null || true)
+          fi
+          if [ -z "$FIREBASE_APP_ID" ] && [ "$APP_SLUG" = "definitely-one" ]; then
+            FIREBASE_APP_ID="1:919056358557:android:7534014df2fdb48179c874"
+          fi
+
+          echo "FIREBASE_APP_ID=$FIREBASE_APP_ID" >> $GITHUB_OUTPUT
+
+          echo "=========================================="
+          echo "📱 Application:      $APP_NAME ($APP_SLUG)"
+          echo "🏷️ Version:          $VERSION"
+          echo "⚙️ Build Profile:    $BUILD_PROFILE"
+          echo "🆔 Firebase App ID:  $FIREBASE_APP_ID"
+          echo "👥 Tester Groups:    $TESTER_GROUPS"
+          echo "=========================================="
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Run EAS Build
+        id: eas_build
+        run: |
+          cd "apps/${{ steps.meta.outputs.APP_SLUG }}/client"
+          npx eas-cli build --platform android --profile ${{ steps.meta.outputs.BUILD_PROFILE }} --non-interactive --wait
+
+      - name: Download Build Artifact
+        id: download_artifact
+        run: |
+          cd "apps/${{ steps.meta.outputs.APP_SLUG }}/client"
+          npx eas-cli build:view --latest --json > build.json
+          
+          ARTIFACT_URL=$(jq -r 'if type=="array" then .[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl else .artifacts.buildUrl // .artifacts.applicationArchiveUrl end' build.json)
+          
+          if [[ "${{ steps.meta.outputs.BUILD_PROFILE }}" == "production" ]]; then
+            ARTIFACT_FILE="${{ steps.meta.outputs.APP_SLUG }}-${{ steps.meta.outputs.VERSION }}.aab"
+          else
+            ARTIFACT_FILE="${{ steps.meta.outputs.APP_SLUG }}-${{ steps.meta.outputs.VERSION }}.apk"
+          fi
+
+          echo "Downloading artifact from: $ARTIFACT_URL"
+          curl -L "$ARTIFACT_URL" -o "$ARTIFACT_FILE"
+
+          echo "ARTIFACT_PATH=apps/${{ steps.meta.outputs.APP_SLUG }}/client/$ARTIFACT_FILE" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_FILE=$ARTIFACT_FILE" >> $GITHUB_OUTPUT
+
+      - name: Distribute to Firebase App Distribution
+        if: steps.meta.outputs.BUILD_PROFILE == 'preview' && steps.meta.outputs.FIREBASE_APP_ID != ''
+        env:
+          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+        run: |
+          echo "$FIREBASE_CREDENTIALS" > /tmp/firebase-sa.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa.json
+
+          npx --yes firebase-tools appdistribution:distribute \
+            "${{ steps.download_artifact.outputs.ARTIFACT_PATH }}" \
+            --app "${{ steps.meta.outputs.FIREBASE_APP_ID }}" \
+            --groups "${{ steps.meta.outputs.TESTER_GROUPS }}" \
+            --release-notes "${{ steps.meta.outputs.RELEASE_NOTES }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: ${{ steps.meta.outputs.APP_NAME }} ${{ steps.meta.outputs.VERSION }}
+          body: ${{ steps.meta.outputs.RELEASE_NOTES }}
+          files: ${{ steps.download_artifact.outputs.ARTIFACT_PATH }}
+          generate_release_notes: false
