@@ -152,9 +152,7 @@ jobs:
         env:
           FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
         run: |
-          cat << 'EOF' > /tmp/firebase-sa.json
-          $FIREBASE_CREDENTIALS
-          EOF
+          node -e 'import fs from "fs"; fs.writeFileSync("/tmp/firebase-sa.json", process.env.FIREBASE_CREDENTIALS);'
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa.json
 
           npx --yes firebase-tools appdistribution:distribute \
