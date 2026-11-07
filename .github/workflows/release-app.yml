@@ -105,29 +105,30 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install Monorepo Dependencies
         run: npm ci
 
-      - name: Setup EAS CLI
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
 
       - name: Run EAS Build
         id: eas_build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           cd "apps/${{ steps.meta.outputs.APP_SLUG }}/client"
-          npx eas-cli build --platform android --profile ${{ steps.meta.outputs.BUILD_PROFILE }} --non-interactive --wait
+          eas build --platform android --profile ${{ steps.meta.outputs.BUILD_PROFILE }} --non-interactive --wait
 
       - name: Download Build Artifact
         id: download_artifact
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           cd "apps/${{ steps.meta.outputs.APP_SLUG }}/client"
-          npx eas-cli build:view --latest --json > build.json
+          eas build:view --latest --json > build.json
           
           ARTIFACT_URL=$(jq -r 'if type=="array" then .[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl else .artifacts.buildUrl // .artifacts.applicationArchiveUrl end' build.json)
           
