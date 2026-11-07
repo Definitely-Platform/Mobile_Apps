@@ -1,0 +1,34 @@
+{
+  "cli": {
+    "version": ">= 14.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_ACCOUNTS_URL": "https://accounts.definitely.live",
+        "EXPO_PUBLIC_AUTH_API_URL": "https://api.accounts.definitely.live",
+        "EXPO_PUBLIC_API_URL": "https://api.accounts.definitely.live"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_ACCOUNTS_URL": "https://accounts.definitely.live",
+        "EXPO_PUBLIC_AUTH_API_URL": "https://api.accounts.definitely.live",
+        "EXPO_PUBLIC_API_URL": "https://api.accounts.definitely.live"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

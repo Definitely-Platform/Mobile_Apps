@@ -1,0 +1,68 @@
+{
+  "expo": {
+    "name": "{{APP_NAME}}",
+    "slug": "{{APP_SLUG}}",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "{{APP_SCHEME}}",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "{{APP_BUNDLE_ID}}",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to securely unlock your session.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "{{APP_BUNDLE_ID}}",
+            "CFBundleURLSchemes": ["{{APP_SCHEME}}"]
+          }
+        ]
+      }
+    },
+    "android": {
+      "package": "{{APP_PACKAGE}}",
+      "adaptiveIcon": {
+        "backgroundColor": "#090a0f",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "{{APP_SCHEME}}",
+              "host": "auth"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#090a0f",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 80
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use Face ID to securely unlock your session."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

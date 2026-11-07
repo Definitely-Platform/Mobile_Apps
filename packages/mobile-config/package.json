@@ -1,0 +1,14 @@
+{
+  "name": "@definitely/mobile-config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "expo-constants": "~58.0.15",
+    "expo-linking": "~58.0.16"
+  },
+  "peerDependencies": {
+    "react-native": "*"
+  }
+}

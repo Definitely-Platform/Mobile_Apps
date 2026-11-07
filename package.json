@@ -1,17 +1,27 @@
 {
-  "name": "definitely-one-ecosystem",
+  "name": "definitely-mobile-ecosystem",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
-  "description": "Definitely One cross-platform mobile app (client) and backend gateway (server)",
+  "description": "Definitely Platforms Unified Mobile Ecosystem Monorepo",
+  "workspaces": [
+    "apps/*",
+    "apps/*/client",
+    "apps/*/server",
+    "packages/*"
+  ],
   "scripts": {
-    "start:client": "npm start --prefix client",
-    "ios": "npm run ios --prefix client",
-    "android": "npm run android --prefix client",
-    "web": "npm run web --prefix client",
-    "start:server": "node server/src/index.ts",
-    "dev:server": "node --watch server/src/index.ts",
-    "typecheck:client": "npm run typecheck --prefix client",
-    "typecheck:server": "./client/node_modules/.bin/tsc --project server/tsconfig.json --noEmit",
-    "typecheck": "npm run typecheck:client && npm run typecheck:server"
+    "start:one": "npm start --prefix apps/definitely-one/client",
+    "android:one": "npm run android --prefix apps/definitely-one/client",
+    "ios:one": "npm run ios --prefix apps/definitely-one/client",
+    "typecheck": "turbo run typecheck",
+    "typecheck:one": "npm run typecheck --prefix apps/definitely-one/client",
+    "build:one": "turbo run build --filter=@definitely/mobile-one",
+    "create-app": "node scripts/create-app.js",
+    "clean": "rm -rf node_modules apps/*/client/node_modules apps/*/server/node_modules packages/*/node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.4",
+    "typescript": "~6.0.3"
   }
 }
