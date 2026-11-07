@@ -18,6 +18,7 @@ import {
 } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
+import { performGoogleSignIn } from '@/services/googleAuth';
 import { useAuthStore } from '@/store/authStore';
 import { useTheme } from '@/hooks/use-theme';
 import { AUTH_CONFIG } from '@/api/config';
@@ -333,22 +334,15 @@ export function AuthWebViewModal({
         const payload = JSON.parse(event.nativeEvent.data);
         if (payload.type === 'GOOGLE_SIGN_IN') {
           setIsCompleting(true);
-          const ssoCode = Math.random().toString(36).substring(2) + Date.now().toString(36);
-          const redirectUri = AUTH_CONFIG.REDIRECT_URI;
-          const authUrl = `${AUTH_CONFIG.ACCOUNTS_URL}/login?redirect=${encodeURIComponent(
-            redirectUri
-          )}&platform=mobile&sso_code=${encodeURIComponent(ssoCode)}`;
-
-          // Delegate to system browser (Chrome Custom Tabs / ASWebAuthenticationSession)
-          const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-          if (result.type === 'success' && result.url) {
-            const { token, refreshToken } = extractTokensFromUrl(result.url);
-            if (token) {
-              await handleCompleteAuth(token, refreshToken);
+          try {
+            const ok = await performGoogleSignIn();
+            if (ok) {
+              onSuccess?.();
+              onClose();
             } else {
               setIsCompleting(false);
             }
-          } else {
+          } catch {
             setIsCompleting(false);
           }
         }
@@ -356,7 +350,7 @@ export function AuthWebViewModal({
         // ignore non-json messages
       }
     },
-    [handleCompleteAuth]
+    [onClose, onSuccess]
   );
 
   const displayDomain = useMemo(() => getDisplayDomain(currentUrl), [currentUrl]);

@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { AuthWebViewModal } from '@/components/auth/AuthWebViewModal';
+import { performGoogleSignIn } from '@/services/googleAuth';
 import { useAuthStore, DEMO_USER } from '@/store/authStore';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -45,12 +46,12 @@ export function LoginScreen() {
     setError(null);
     setSsoLoading(true);
     try {
-      const ok = await openSsoLogin();
+      const ok = await performGoogleSignIn();
       if (!ok) {
         setSsoLoading(false);
       }
     } catch (err: any) {
-      setError(err?.message || 'Google Sign-On failed');
+      setError(err?.message || 'Google Sign-In failed');
       setSsoLoading(false);
     }
   };
