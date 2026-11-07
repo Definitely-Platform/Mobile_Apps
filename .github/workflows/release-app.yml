@@ -128,7 +128,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           cd "apps/${{ steps.meta.outputs.APP_SLUG }}/client"
-          eas build:view --latest --json > build.json
+          eas build:list --limit 1 --json > build.json
           
           ARTIFACT_URL=$(jq -r 'if type=="array" then .[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl else .artifacts.buildUrl // .artifacts.applicationArchiveUrl end' build.json)
           
