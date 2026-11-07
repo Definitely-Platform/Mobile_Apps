@@ -17,6 +17,7 @@
     "typecheck": "turbo run typecheck",
     "typecheck:one": "npm run typecheck --prefix apps/definitely-one/client",
     "build:one": "turbo run build --filter=@definitely/mobile-one",
+    "distribute:one": "node scripts/distribute.js",
     "create-app": "node scripts/create-app.js",
     "clean": "rm -rf node_modules apps/*/client/node_modules apps/*/server/node_modules packages/*/node_modules"
   },

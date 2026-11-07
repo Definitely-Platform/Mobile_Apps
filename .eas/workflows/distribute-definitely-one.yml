@@ -1,0 +1,42 @@
+name: Build and Distribute Definitely One to Firebase
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_android:
+    name: Build Android APK
+    type: build
+    params:
+      platform: android
+      profile: preview
+
+  distribute_android:
+    name: Upload Artifact to Firebase App Distribution
+    needs: [build_android]
+    steps:
+      - name: Checkout Source Code
+        uses: eas/checkout
+
+      - name: Download Build Artifact
+        uses: eas/download_build
+        id: download_build
+        with:
+          build_id: ${{ needs.build_android.outputs.build_id }}
+          extensions: [apk]
+
+      - name: Set Up Google Credentials
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT_KEY" > /tmp/service-account.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/service-account.json" >> $EAS_ENV
+
+      - name: Generate Release Notes & Distribute
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          npx --yes firebase-tools appdistribution:distribute \
+            "${{ steps.download_build.outputs.artifact_path }}" \
+            --app "1:919056358557:android:7534014df2fdb48179c874" \
+            --groups "qa-testers" \
+            --release-notes "$COMMIT_MSG"
