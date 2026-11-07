@@ -1,5 +1,8 @@
 name: Build & Distribute Mobile App
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -149,7 +152,9 @@ jobs:
         env:
           FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
         run: |
-          echo "$FIREBASE_CREDENTIALS" > /tmp/firebase-sa.json
+          cat << 'EOF' > /tmp/firebase-sa.json
+          $FIREBASE_CREDENTIALS
+          EOF
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa.json
 
           npx --yes firebase-tools appdistribution:distribute \
