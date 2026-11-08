@@ -14,8 +14,13 @@ interface ServiceCardProps {
 export function ServiceCard({ service, onLaunch, onToggleFavorite }: ServiceCardProps) {
   const { colors } = useTheme();
 
+  const categoryLabel =
+    service.category.charAt(0).toUpperCase() + service.category.slice(1);
+
   return (
-    <View
+    <TouchableOpacity
+      activeOpacity={0.72}
+      onPress={() => onLaunch(service)}
       style={[
         styles.card,
         {
@@ -23,9 +28,10 @@ export function ServiceCard({ service, onLaunch, onToggleFavorite }: ServiceCard
           borderColor: colors.cardBorder,
         },
       ]}>
+      {/* Header Row */}
       <View style={styles.headerRow}>
         <View style={styles.iconTitleRow}>
-          <View style={[styles.iconWrapper, { backgroundColor: `${service.iconColor}15` }]}>
+          <View style={[styles.iconWrapper, { backgroundColor: `${service.iconColor}14` }]}>
             <Ionicons
               name={service.iconName as any}
               size={22}
@@ -34,7 +40,9 @@ export function ServiceCard({ service, onLaunch, onToggleFavorite }: ServiceCard
           </View>
           <View style={styles.titleArea}>
             <View style={styles.nameRow}>
-              <ThemedText style={styles.serviceName}>{service.name}</ThemedText>
+              <ThemedText style={styles.serviceName} numberOfLines={1}>
+                {service.name}
+              </ThemedText>
               {service.badge && (
                 <View
                   style={[
@@ -42,10 +50,13 @@ export function ServiceCard({ service, onLaunch, onToggleFavorite }: ServiceCard
                     {
                       backgroundColor:
                         service.badge === 'Live'
-                          ? `${colors.success}20`
-                          : `${colors.primary}20`,
+                          ? `${colors.success}18`
+                          : `${colors.primary}18`,
                     },
                   ]}>
+                  {service.badge === 'Live' && (
+                    <View style={[styles.liveDot, { backgroundColor: colors.success }]} />
+                  )}
                   <ThemedText
                     type="small"
                     style={{
@@ -58,8 +69,8 @@ export function ServiceCard({ service, onLaunch, onToggleFavorite }: ServiceCard
                 </View>
               )}
             </View>
-            <ThemedText type="small" style={{ color: colors.textSecondary }}>
-              {service.category.toUpperCase()}
+            <ThemedText type="small" style={[styles.categoryLabel, { color: colors.textSecondary }]}>
+              {categoryLabel}
             </ThemedText>
           </View>
         </View>
@@ -67,64 +78,70 @@ export function ServiceCard({ service, onLaunch, onToggleFavorite }: ServiceCard
         {onToggleFavorite && (
           <TouchableOpacity
             style={styles.favoriteBtn}
-            onPress={() => onToggleFavorite(service.id)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              onToggleFavorite(service.id);
+            }}
             accessibilityLabel="Toggle Favorite">
             <Ionicons
               name={service.isFavorite ? 'star' : 'star-outline'}
-              size={18}
+              size={17}
               color={service.isFavorite ? '#F59E0B' : colors.textSecondary}
             />
           </TouchableOpacity>
         )}
       </View>
 
+      {/* Tagline */}
       <ThemedText style={[styles.tagline, { color: colors.textSecondary }]} numberOfLines={2}>
         {service.tagline}
       </ThemedText>
 
-      {service.metrics && (
-        <View style={[styles.metricsContainer, { backgroundColor: colors.backgroundElement }]}>
-          <ThemedText type="small" style={{ color: colors.textSecondary }}>
-            {service.metrics.label}
-          </ThemedText>
-          <ThemedText style={styles.metricsValue}>{service.metrics.value}</ThemedText>
-        </View>
-      )}
-
+      {/* Footer Row: Metrics Chip & Launch Action */}
       <View style={styles.footerRow}>
-        <View style={styles.tierPill}>
-          <ThemedText type="small" style={{ color: colors.textSecondary, fontSize: 11 }}>
-            Access: {service.requiredTier?.toUpperCase()}
+        {service.metrics ? (
+          <View style={[styles.metricChip, { backgroundColor: colors.backgroundElement }]}>
+            <Ionicons name="pulse-outline" size={12} color={colors.textSecondary} />
+            <ThemedText style={[styles.metricChipLabel, { color: colors.textSecondary }]}>
+              {service.metrics.label}:
+            </ThemedText>
+            <ThemedText style={[styles.metricChipValue, { color: colors.text }]}>
+              {service.metrics.value}
+            </ThemedText>
+          </View>
+        ) : (
+          <View />
+        )}
+
+        <View style={[styles.launchPill, { backgroundColor: `${service.iconColor}14` }]}>
+          <ThemedText style={[styles.launchPillText, { color: service.iconColor }]}>
+            Launch
           </ThemedText>
+          <Ionicons name="arrow-forward" size={12} color={service.iconColor} />
         </View>
-        <TouchableOpacity
-          style={[styles.launchButton, { backgroundColor: service.iconColor }]}
-          onPress={() => onLaunch(service)}>
-          <ThemedText style={styles.launchButtonText}>Launch</ThemedText>
-          <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
-        </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
-    padding: 16,
+    padding: 15,
     borderWidth: 1,
-    marginBottom: 14,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 2,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 10,
+    alignItems: 'center',
+    marginBottom: 8,
   },
   iconTitleRow: {
     flexDirection: 'row',
@@ -133,8 +150,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconWrapper: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -148,13 +165,27 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   serviceName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  categoryLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 1,
   },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
+  },
+  liveDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   favoriteBtn: {
     padding: 4,
@@ -164,40 +195,38 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 12,
   },
-  metricsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  metricsValue: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 4,
+    paddingTop: 2,
   },
-  tierPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  launchButton: {
+  metricChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
-  launchButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
+  metricChipLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  metricChipValue: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  launchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  launchPillText: {
+    fontSize: 12,
     fontWeight: '700',
   },
 });

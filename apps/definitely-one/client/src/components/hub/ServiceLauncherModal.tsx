@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Modal, TouchableOpacity, Linking, ScrollView } from 'react-native';
+import { View, StyleSheet, Modal, TouchableOpacity, Linking, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { EcosystemService } from '@/types/ecosystem';
@@ -20,7 +20,11 @@ export function ServiceLauncherModal({ service, onClose }: ServiceLauncherModalP
   };
 
   return (
-    <Modal visible={!!service} animationType="slide" transparent presentationStyle="pageSheet">
+    <Modal
+      visible={!!service}
+      animationType="slide"
+      presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
+      onRequestClose={onClose}>
       <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
         <View style={styles.headerBar}>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -47,9 +51,9 @@ export function ServiceLauncherModal({ service, onClose }: ServiceLauncherModalP
                 </ThemedText>
                 <ThemedText style={styles.statValue}>{service.metrics.value}</ThemedText>
               </View>
-              <View style={[styles.tierTag, { backgroundColor: `${colors.primary}15` }]}>
-                <ThemedText style={[styles.tierText, { color: colors.primary }]}>
-                  {service.requiredTier?.toUpperCase()} TIER
+              <View style={[styles.tierTag, { backgroundColor: `${colors.success}15` }]}>
+                <ThemedText style={[styles.tierText, { color: colors.success }]}>
+                  Ready
                 </ThemedText>
               </View>
             </View>
@@ -57,7 +61,7 @@ export function ServiceLauncherModal({ service, onClose }: ServiceLauncherModalP
 
           {/* Description */}
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-            <ThemedText style={styles.sectionHeading}>About this Tool</ThemedText>
+            <ThemedText style={styles.sectionHeading}>Overview</ThemedText>
             <ThemedText style={[styles.bodyText, { color: colors.textSecondary }]}>
               {service.description}
             </ThemedText>
@@ -65,10 +69,10 @@ export function ServiceLauncherModal({ service, onClose }: ServiceLauncherModalP
 
           {/* Ecosystem Capabilities */}
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-            <ThemedText style={styles.sectionHeading}>Ecosystem Integration</ThemedText>
+            <ThemedText style={styles.sectionHeading}>Platform Features</ThemedText>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-              <ThemedText style={styles.featureText}>Unified Single Sign-On (No extra login)</ThemedText>
+              <ThemedText style={styles.featureText}>Unified Single Sign-On</ThemedText>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={18} color={colors.success} />

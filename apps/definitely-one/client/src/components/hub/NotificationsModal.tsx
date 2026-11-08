@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Modal, TouchableOpacity, FlatList } from 'react-native';
+import { View, StyleSheet, Modal, TouchableOpacity, FlatList, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useEcosystemStore } from '@/store/ecosystemStore';
@@ -54,7 +54,11 @@ export function NotificationsModal({ visible, onClose }: NotificationsModalProps
   );
 
   return (
-    <Modal visible={visible} animationType="slide" transparent presentationStyle="pageSheet">
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
+      onRequestClose={onClose}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { borderBottomColor: colors.cardBorder }]}>
           <ThemedText style={styles.title}>Ecosystem Activity</ThemedText>

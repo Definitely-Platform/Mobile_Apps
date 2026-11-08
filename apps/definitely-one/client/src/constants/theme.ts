@@ -16,9 +16,9 @@ export const Colors = {
     card: '#FFFFFF',
     cardBorder: '#E2E8F0',
     textSecondary: '#64748B',
-    primary: '#2563EB',
-    primaryHover: '#1D4ED8',
-    accent: '#6366F1',
+    primary: '#6366F1',
+    primaryHover: '#4F46E5',
+    accent: '#8B5CF6',
     success: '#10B981',
     warning: '#F59E0B',
     danger: '#EF4444',
@@ -29,12 +29,12 @@ export const Colors = {
     backgroundElement: '#161E2E',
     backgroundSelected: '#1E293B',
     card: '#111827',
-    cardBorder: '#1F2937',
+    cardBorder: 'rgba(255, 255, 255, 0.08)',
     textSecondary: '#94A3B8',
-    primary: '#3B82F6',
-    primaryHover: '#2563EB',
-    accent: '#818CF8',
-    success: '#34D399',
+    primary: '#6366F1',
+    primaryHover: '#4F46E5',
+    accent: '#A855F7',
+    success: '#10B981',
     warning: '#FBBF24',
     danger: '#F87171',
   },
@@ -77,5 +77,5 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+export const BottomTabInset = Platform.select({ ios: 50, android: 50 }) ?? 0;
 export const MaxContentWidth = 800;

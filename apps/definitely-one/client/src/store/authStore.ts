@@ -32,6 +32,7 @@ export interface AuthState {
   lock: () => void;
   unlock: () => void;
   setBiometricsEnabled: (enabled: boolean) => Promise<void>;
+  updateAvatar: (avatarUrl: string | null) => Promise<boolean>;
 }
 
 const STORAGE_KEYS = {
@@ -451,5 +452,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setBiometricsEnabled: async (enabled) => {
     await SecureStorage.setItem(STORAGE_KEYS.BIOMETRICS, String(enabled));
     set({ biometricsEnabled: enabled });
+  },
+
+  updateAvatar: async (avatarUrl: string | null) => {
+    const currentUser = get().user;
+    if (!currentUser) return false;
+
+    const updatedUser: UserProfile = {
+      ...currentUser,
+      avatarUrl: avatarUrl || undefined,
+    };
+
+    try {
+      await SecureStorage.setJSON(STORAGE_KEYS.USER, updatedUser);
+      set({ user: updatedUser });
+
+      // Opportunistic sync with backend
+      const token = get().tokens?.accessToken;
+      if (token) {
+        fetch(`${AUTH_CONFIG.API_URL}/api/auth/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ avatarUrl }),
+        }).catch(() => {
+          // Offline-friendly: local SecureStorage is the primary source of truth
+        });
+      }
+
+      return true;
+    } catch (err) {
+      console.warn('[authStore] Failed to update avatar:', err);
+      return false;
+    }
   },
 }));

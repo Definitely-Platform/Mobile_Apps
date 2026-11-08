@@ -1,10 +1,11 @@
-import React from 'react';
-import { View, StyleSheet, Modal, TouchableOpacity, Switch, Image, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, Modal, TouchableOpacity, Switch, Image, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { useAuthStore } from '@/store/authStore';
 import { useBiometrics } from '@/hooks/useBiometrics';
 import { useTheme } from '@/hooks/use-theme';
+import { UpdateAvatarModal } from './UpdateAvatarModal';
 
 interface ProfileModalProps {
   visible: boolean;
@@ -18,6 +19,7 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
   const biometricsEnabled = useAuthStore((s) => s.biometricsEnabled);
   const setBiometricsEnabled = useAuthStore((s) => s.setBiometricsEnabled);
   const { biometricType } = useBiometrics();
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out of Definitely One on this device?', [
@@ -34,7 +36,11 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent presentationStyle="pageSheet">
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
+      onRequestClose={onClose}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { borderBottomColor: colors.cardBorder }]}>
           <ThemedText style={styles.title}>Account & Security</ThemedText>
@@ -46,15 +52,25 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
         <View style={styles.content}>
           {/* User Card */}
           <View style={[styles.userCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-            {user?.avatarUrl ? (
-              <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary }]}>
-                <ThemedText style={styles.avatarInitial}>
-                  {user?.name?.[0]?.toUpperCase() ?? 'U'}
-                </ThemedText>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setAvatarModalOpen(true)}
+              style={styles.avatarWrap}
+              accessibilityLabel="Change Profile Picture">
+              {user?.avatarUrl ? (
+                <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary }]}>
+                  <ThemedText style={styles.avatarInitial}>
+                    {user?.name?.[0]?.toUpperCase() ?? 'U'}
+                  </ThemedText>
+                </View>
+              )}
+              <View style={[styles.avatarBadge, { backgroundColor: colors.primary }]}>
+                <Ionicons name="camera" size={11} color="#ffffff" />
               </View>
-            )}
+            </TouchableOpacity>
+
             <View style={styles.userInfo}>
               <ThemedText style={styles.userName}>{user?.name ?? 'Alex Rivera'}</ThemedText>
               <ThemedText type="small" style={{ color: colors.textSecondary }}>
@@ -62,7 +78,7 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
               </ThemedText>
               <View style={[styles.badge, { backgroundColor: `${colors.primary}15` }]}>
                 <ThemedText style={[styles.badgeText, { color: colors.primary }]}>
-                  {user?.organization?.name ?? 'Definitely Platform'} • {user?.organization?.plan?.toUpperCase() ?? 'ENTERPRISE'}
+                  {user?.organization?.name ?? 'Definitely Ecosystem'}
                 </ThemedText>
               </View>
             </View>
@@ -119,6 +135,11 @@ export function ProfileModal({ visible, onClose }: ProfileModalProps) {
           </TouchableOpacity>
         </View>
       </View>
+
+      <UpdateAvatarModal
+        visible={avatarModalOpen}
+        onClose={() => setAvatarModalOpen(false)}
+      />
     </Modal>
   );
 }
@@ -154,6 +175,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
   },
+  avatarWrap: {
+    position: 'relative',
+  },
   avatar: {
     width: 56,
     height: 56,
@@ -165,6 +189,18 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#0f172a',
   },
   avatarInitial: {
     color: '#FFFFFF',

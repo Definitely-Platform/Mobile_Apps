@@ -1,7 +1,7 @@
 {
   "name": "@definitely/mobile-one-client",
-  "version": "1.0.0",
-  "main": "expo-router/entry",
+  "version": "1.0.3",
+  "main": "./index.js",
   "dependencies": {
     "@definitely/mobile-auth": "*",
     "@definitely/mobile-config": "*",
@@ -16,6 +16,7 @@
     "expo-font": "~58.0.11",
     "expo-glass-effect": "~58.0.5",
     "expo-image": "~58.0.18",
+    "expo-image-picker": "~58.0.10",
     "expo-linking": "~58.0.16",
     "expo-local-authentication": "~58.0.2",
     "expo-router": "~58.0.30",

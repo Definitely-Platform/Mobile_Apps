@@ -18,15 +18,12 @@ import { useTheme } from '@/hooks/use-theme';
 
 export function LoginScreen() {
   const { colors } = useTheme();
-  const openSsoLogin = useAuthStore((s) => s.openSsoLogin);
-  const openSsoRegister = useAuthStore((s) => s.openSsoRegister);
   const loginWithTokens = useAuthStore((s) => s.loginWithTokens);
   const [webViewVisible, setWebViewVisible] = useState(false);
   const [webViewMode, setWebViewMode] = useState<'login' | 'signup'>('login');
   const [ssoLoading, setSsoLoading] = useState(false);
-  const [registerLoading, setRegisterLoading] = useState(false);
   const [manualToken, setManualToken] = useState('');
-  const [showDeveloperInput, setShowDeveloperInput] = useState(false);
+  const [showDevPanel, setShowDevPanel] = useState(false);
   const [devLoading, setDevLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,7 +87,10 @@ export function LoginScreen() {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
         {/* Brand Header */}
         <View style={styles.brandContainer}>
           <View style={[styles.logoBadge, { backgroundColor: colors.primary }]}>
@@ -101,11 +101,11 @@ export function LoginScreen() {
             <ThemedText style={[styles.brandHighlight, { color: colors.primary }]}>One</ThemedText>
           </View>
           <ThemedText style={[styles.brandTagline, { color: colors.textSecondary }]}>
-            One account. Every tool, service & product.
+            Universal Ecosystem Access
           </ThemedText>
         </View>
 
-        {/* Auth Card */}
+        {/* Main Authentication Card */}
         <View
           style={[
             styles.card,
@@ -114,9 +114,9 @@ export function LoginScreen() {
               borderColor: colors.cardBorder,
             },
           ]}>
-          <ThemedText style={styles.cardHeader}>Sign in to your account</ThemedText>
-          <ThemedText type="small" style={{ color: colors.textSecondary, marginBottom: 20 }}>
-            Universal Ecosystem SSO across Web, Desktop & Mobile
+          <ThemedText style={styles.cardHeader}>Sign In</ThemedText>
+          <ThemedText type="small" style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
+            Access all platforms with your single identity
           </ThemedText>
 
           {error && (
@@ -132,25 +132,24 @@ export function LoginScreen() {
           <TouchableOpacity
             style={[styles.primaryButton, { backgroundColor: colors.primary }]}
             onPress={handleSsoSignIn}
-            disabled={ssoLoading || registerLoading}
             activeOpacity={0.85}>
-            <Ionicons name="shield-checkmark" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Ionicons name="shield-checkmark" size={19} color="#FFFFFF" style={{ marginRight: 8 }} />
             <ThemedText style={styles.primaryButtonText}>
-              Sign in with Definitely SSO
+              Continue with Definitely SSO
             </ThemedText>
           </TouchableOpacity>
 
-          {/* Direct Google SSO Action */}
+          {/* Google SSO Action */}
           <TouchableOpacity
             style={[
               styles.googleButton,
               {
-                backgroundColor: colors.card,
+                backgroundColor: colors.backgroundElement,
                 borderColor: colors.cardBorder,
               },
             ]}
             onPress={handleGoogleSignIn}
-            disabled={ssoLoading || registerLoading}
+            disabled={ssoLoading}
             activeOpacity={0.85}>
             {ssoLoading ? (
               <ActivityIndicator color="#EA4335" size="small" style={{ marginRight: 8 }} />
@@ -158,100 +157,108 @@ export function LoginScreen() {
               <Ionicons name="logo-google" size={18} color="#EA4335" style={{ marginRight: 8 }} />
             )}
             <ThemedText style={[styles.googleButtonText, { color: colors.text }]}>
-              {ssoLoading ? 'Connecting to Google...' : 'Continue with Google'}
+              {ssoLoading ? 'Connecting...' : 'Continue with Google'}
             </ThemedText>
           </TouchableOpacity>
 
-          {/* Secondary Register Action */}
-          <TouchableOpacity
-            style={[
-              styles.secondaryButton,
-              {
-                backgroundColor: colors.backgroundElement,
-                borderColor: colors.cardBorder,
-              },
-            ]}
-            onPress={handleSsoRegister}
-            disabled={ssoLoading || registerLoading}
-            activeOpacity={0.85}>
-            {registerLoading ? (
-              <ActivityIndicator color={colors.text} size="small" style={{ marginRight: 8 }} />
-            ) : (
-              <Ionicons name="person-add-outline" size={18} color={colors.text} style={{ marginRight: 8 }} />
-            )}
-            <ThemedText style={[styles.secondaryButtonText, { color: colors.text }]}>
-              {registerLoading ? 'Opening registration...' : 'Create an Account'}
-            </ThemedText>
-          </TouchableOpacity>
-
-          <ThemedText type="small" style={[styles.ssoHint, { color: colors.textSecondary }]}>
-            Secure in-app authentication via Definitely Accounts
-          </ThemedText>
-
+          {/* Divider */}
           <View style={styles.dividerRow}>
             <View style={[styles.dividerLine, { backgroundColor: colors.cardBorder }]} />
             <ThemedText type="small" style={[styles.dividerText, { color: colors.textSecondary }]}>
-              developer options
+              or
             </ThemedText>
             <View style={[styles.dividerLine, { backgroundColor: colors.cardBorder }]} />
           </View>
 
-          {/* Quick Demo Access */}
+          {/* Create Account Link */}
           <TouchableOpacity
-            style={[styles.demoButton, { borderColor: colors.primary }]}
-            onPress={handleQuickDemo}
-            disabled={devLoading || ssoLoading}>
-            <Ionicons name="flash-outline" size={18} color={colors.primary} />
-            <ThemedText style={[styles.demoButtonText, { color: colors.primary }]}>
-              Quick Demo Access
+            style={styles.registerRow}
+            onPress={handleSsoRegister}
+            activeOpacity={0.75}>
+            <ThemedText type="small" style={{ color: colors.textSecondary }}>
+              Don’t have an account?{' '}
+            </ThemedText>
+            <ThemedText type="small" style={[styles.registerLink, { color: colors.primary }]}>
+              Create one
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        {/* Developer / Demo Access Section (Unobtrusive) */}
+        <View style={styles.devSection}>
+          <TouchableOpacity
+            onPress={() => setShowDevPanel(!showDevPanel)}
+            style={styles.devToggle}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons
+              name={showDevPanel ? 'chevron-up' : 'code-slash-outline'}
+              size={14}
+              color={colors.textSecondary}
+            />
+            <ThemedText type="small" style={[styles.devToggleText, { color: colors.textSecondary }]}>
+              {showDevPanel ? 'Hide developer tools' : 'Developer & Demo access'}
             </ThemedText>
           </TouchableOpacity>
 
-          {/* Developer Token Quick Connect Toggle */}
-          <TouchableOpacity
-            onPress={() => setShowDeveloperInput(!showDeveloperInput)}
-            style={styles.devToggle}>
-            <Ionicons name="key-outline" size={14} color={colors.textSecondary} />
-            <ThemedText type="small" style={{ color: colors.textSecondary, fontSize: 11 }}>
-              {showDeveloperInput ? 'Hide developer token' : 'Developer token quick connect'}
-            </ThemedText>
-          </TouchableOpacity>
-
-          {showDeveloperInput && (
-            <View style={styles.devInputContainer}>
-              <TextInput
-                value={manualToken}
-                onChangeText={setManualToken}
-                placeholder="Paste Bearer JWT token..."
-                placeholderTextColor={colors.textSecondary}
-                autoCapitalize="none"
-                style={[
-                  styles.devInput,
-                  {
-                    color: colors.text,
-                    backgroundColor: colors.backgroundElement,
-                    borderColor: colors.cardBorder,
-                  },
-                ]}
-              />
+          {showDevPanel && (
+            <View
+              style={[
+                styles.devCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.cardBorder,
+                },
+              ]}>
               <TouchableOpacity
-                onPress={handleManualTokenSubmit}
-                disabled={devLoading || !manualToken.trim()}
-                style={[
-                  styles.devSubmitBtn,
-                  { backgroundColor: colors.backgroundElement, opacity: manualToken.trim() ? 1 : 0.5 },
-                ]}>
-                <ThemedText type="small" style={{ fontWeight: '600', color: colors.text }}>
-                  {devLoading ? 'Connecting...' : 'Connect with Token'}
+                style={[styles.demoButton, { borderColor: colors.primary }]}
+                onPress={handleQuickDemo}
+                disabled={devLoading}>
+                <Ionicons name="flash-outline" size={16} color={colors.primary} />
+                <ThemedText style={[styles.demoButtonText, { color: colors.primary }]}>
+                  {devLoading ? 'Loading Demo...' : 'Quick Demo Mode'}
                 </ThemedText>
               </TouchableOpacity>
+
+              <View style={styles.tokenContainer}>
+                <TextInput
+                  value={manualToken}
+                  onChangeText={setManualToken}
+                  placeholder="Paste Bearer JWT token..."
+                  placeholderTextColor={colors.textSecondary}
+                  autoCapitalize="none"
+                  style={[
+                    styles.tokenInput,
+                    {
+                      color: colors.text,
+                      backgroundColor: colors.backgroundElement,
+                      borderColor: colors.cardBorder,
+                    },
+                  ]}
+                />
+                <TouchableOpacity
+                  onPress={handleManualTokenSubmit}
+                  disabled={devLoading || !manualToken.trim()}
+                  style={[
+                    styles.tokenSubmitBtn,
+                    {
+                      backgroundColor: colors.primary,
+                      opacity: manualToken.trim() ? 1 : 0.5,
+                    },
+                  ]}>
+                  <ThemedText style={styles.tokenSubmitText}>Connect</ThemedText>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </View>
 
-        <ThemedText type="small" style={[styles.footerNotice, { color: colors.textSecondary }]}>
-          Protected by Definitely One SSO & Hardware Keystore
-        </ThemedText>
+        {/* Footer Security Pill */}
+        <View style={styles.footerRow}>
+          <Ionicons name="shield-checkmark-outline" size={13} color={colors.textSecondary} />
+          <ThemedText type="small" style={[styles.footerText, { color: colors.textSecondary }]}>
+            Protected by Definitely SSO & Hardware Keystore
+          </ThemedText>
+        </View>
       </ScrollView>
 
       {/* Embedded In-App Authentication WebView */}
@@ -271,59 +278,73 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+    paddingHorizontal: 22,
+    paddingVertical: 32,
   },
   brandContainer: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 24,
   },
   logoBadge: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
   },
   logoNumber: {
     color: '#FFFFFF',
-    fontSize: 30,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '900',
+    lineHeight: 32,
   },
   brandTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
   brandTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     letterSpacing: -0.5,
   },
   brandHighlight: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
-    marginLeft: 4,
     letterSpacing: -0.5,
   },
   brandTagline: {
     fontSize: 13,
+    fontWeight: '500',
     marginTop: 4,
     textAlign: 'center',
+    letterSpacing: -0.1,
   },
   card: {
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 22,
+    padding: 22,
     borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   cardHeader: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    marginBottom: 4,
+    letterSpacing: -0.3,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
+    marginBottom: 18,
   },
   errorContainer: {
     flexDirection: 'row',
@@ -337,14 +358,14 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#ef4444',
     flex: 1,
+    fontSize: 13,
   },
   primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
-    borderRadius: 14,
-    marginTop: 4,
+    borderRadius: 13,
   },
   primaryButtonText: {
     color: '#FFFFFF',
@@ -356,7 +377,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 13,
-    borderRadius: 14,
+    borderRadius: 13,
     borderWidth: 1,
     marginTop: 10,
   },
@@ -364,81 +385,95 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  secondaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 13,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginTop: 10,
-  },
-  secondaryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  ssoHint: {
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 4,
-  },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 18,
+    marginVertical: 16,
   },
   dividerLine: {
     flex: 1,
-    height: 1,
+    height: StyleSheet.hairlineWidth,
   },
   dividerText: {
-    marginHorizontal: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    fontSize: 10,
+    marginHorizontal: 12,
+    fontSize: 12,
+  },
+  registerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
+  registerLink: {
+    fontWeight: '700',
+  },
+  devSection: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  devToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+  },
+  devToggleText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  devCard: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    marginTop: 10,
+    gap: 10,
   },
   demoButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 11,
+    borderWidth: 1,
+    gap: 6,
   },
   demoButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
-  devToggle: {
+  tokenContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
-    gap: 4,
-  },
-  devInputContainer: {
-    marginTop: 12,
     gap: 8,
   },
-  devInput: {
+  tokenInput: {
+    flex: 1,
     fontSize: 12,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
-  devSubmitBtn: {
+  tokenSubmitBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 10,
   },
-  footerNotice: {
-    textAlign: 'center',
+  tokenSubmitText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     marginTop: 24,
+  },
+  footerText: {
     fontSize: 11,
   },
 });

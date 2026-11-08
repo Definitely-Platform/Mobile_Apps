@@ -7,12 +7,18 @@ import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 import { useEcosystemStore } from '@/store/ecosystemStore';
 import { useAuthStore } from '@/store/authStore';
+import { LoginScreen } from '@/components/auth/LoginScreen';
 
 export default function ExploreScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const services = useEcosystemStore((s) => s.services);
   const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  if (!isAuthenticated) {
+    return <LoginScreen />;
+  }
 
   return (
     <ScrollView
@@ -99,7 +105,7 @@ export default function ExploreScreen() {
               Organization Plan
             </ThemedText>
             <ThemedText style={[styles.metricVal, { color: colors.primary }]}>
-              {user?.organization?.plan?.toUpperCase() ?? 'ENTERPRISE'}
+              {user?.organization?.plan?.toUpperCase() ?? 'ACTIVE'}
             </ThemedText>
           </View>
         </View>

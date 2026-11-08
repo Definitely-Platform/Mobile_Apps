@@ -20,6 +20,7 @@
     "distribute": "node scripts/distribute.js",
     "distribute:one": "node scripts/distribute.js definitely-one",
     "create-app": "node scripts/create-app.js",
+    "postinstall": "node scripts/patch-expo-modules.js",
     "clean": "rm -rf node_modules apps/*/client/node_modules apps/*/server/node_modules packages/*/node_modules"
   },
   "devDependencies": {
